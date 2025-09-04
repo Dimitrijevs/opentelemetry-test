@@ -1,31 +1,16 @@
 package openTelemetry.products.service;
 
 import java.util.List;
-import java.util.logging.Logger;
 
-import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.springframework.stereotype.Service;
 
 import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.LongCounter;
 import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
-import io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporter;
-import io.opentelemetry.exporter.otlp.metrics.OtlpGrpcMetricExporter;
-import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
-import io.opentelemetry.sdk.OpenTelemetrySdk;
-import io.opentelemetry.sdk.logs.SdkLoggerProvider;
-import io.opentelemetry.sdk.logs.export.BatchLogRecordProcessor;
-import io.opentelemetry.sdk.metrics.SdkMeterProvider;
-import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
-import io.opentelemetry.sdk.resources.Resource;
-import io.opentelemetry.sdk.trace.SdkTracerProvider;
-import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 import jakarta.persistence.EntityNotFoundException;
 import openTelemetry.products.dto.ProductRequest;
 import openTelemetry.products.dto.ProductResponse;
@@ -51,16 +36,11 @@ public class ProductService {
     // tracer
     private final Tracer tracer;
 
-    //logger
-    private static final Logger logger = Logger.getLogger("jul-logger");
-
-    public ProductService(ProductRepository productRepository, ProductMapper productMapper) {
+    public ProductService(ProductRepository productRepository, ProductMapper productMapper, OpenTelemetry openTelemetry) {
 
         this.productRepository = productRepository;
 
         this.productMapper = productMapper;
-
-        OpenTelemetry openTelemetry = initOpenTelemetry();
 
         this.meter = openTelemetry.getMeter(INSTRUMENTATION_NAME);
 
@@ -69,80 +49,11 @@ public class ProductService {
                 .build();
 
         this.tracer = openTelemetry.getTracer(INSTRUMENTATION_NAME);
-
-        SLF4JBridgeHandler.removeHandlersForRootLogger();
-        SLF4JBridgeHandler.install();
-    }
-
-    static OpenTelemetry initOpenTelemetry() {
-
-        // setup resource with service name
-
-        Resource resource = Resource.create(Attributes.of(AttributeKey.stringKey("service.name"), "products-service"));
-
-        // metrics
-
-        OtlpGrpcMetricExporter otlpGrpcMetricExporter = OtlpGrpcMetricExporter.builder()
-                .setEndpoint("http://ht-otel-collector:4317")
-                .build();
-
-        PeriodicMetricReader periodicMetricReader = PeriodicMetricReader.builder(otlpGrpcMetricExporter)
-                .setInterval(java.time.Duration.ofSeconds(15))
-                .build();
-
-        // Traces
-
-        OtlpGrpcSpanExporter otlpGrpcSpanExporter = OtlpGrpcSpanExporter.builder()
-                .setEndpoint("http://ht-otel-collector:4317")
-                .build();
-
-        SimpleSpanProcessor simpleSpanProcessor = SimpleSpanProcessor.builder(otlpGrpcSpanExporter)
-                .build();
-
-        // logs 
-
-        OtlpGrpcLogRecordExporter otlpGrpcLogRecordExporter = OtlpGrpcLogRecordExporter.builder()
-                .setEndpoint("http://ht-otel-collector:4317")
-                .build();
-
-        BatchLogRecordProcessor batchLogRecordProcessor = BatchLogRecordProcessor.builder(otlpGrpcLogRecordExporter)
-                .build();
-
-        // providers
-
-        SdkTracerProvider sdkTracerProvider = SdkTracerProvider.builder()
-                .setResource(resource)
-                .addSpanProcessor(simpleSpanProcessor)
-                .build();
-
-        SdkMeterProvider sdkMeterProvider = SdkMeterProvider.builder()
-                .setResource(resource)
-                .registerMetricReader(periodicMetricReader)
-                .build();
-
-        SdkLoggerProvider loggerProvider = SdkLoggerProvider.builder()
-                .setResource(resource)
-                .addLogRecordProcessor(batchLogRecordProcessor)
-                .build();
-
-        // sdk
-
-        OpenTelemetrySdk openTelemetrySdk = OpenTelemetrySdk.builder()
-                .setMeterProvider(sdkMeterProvider)
-                .setTracerProvider(sdkTracerProvider)
-                .setLoggerProvider(loggerProvider)
-                .build();
-
-        Runtime.getRuntime().addShutdownHook(new Thread(openTelemetrySdk::close));
-
-        return openTelemetrySdk;
     }
 
     public List<ProductResponse> allProducts() {
 
         requestCounter.add(1);
-
-        logger.info("Request recieved succesfully");
 
         List<ProductResponse> productResponses;
 
@@ -160,7 +71,6 @@ public class ProductService {
 
                 products = productRepository.findAll(); // Now this will be child of fetchSpan
 
-                logger.info("Fetched data correctly");
             } finally {
                 fetchSpan.end();
             }
@@ -174,7 +84,6 @@ public class ProductService {
                         .map(product -> productMapper.productResponse(product))
                         .toList();
 
-                logger.info("Mapped data correctly");
             } finally {
                 mappingSpan.end();
             }
@@ -182,8 +91,6 @@ public class ProductService {
         } finally {
             dbSpan.end();
         }
-
-        logger.info("Business logic finished");
 
         return productResponses;
     }
