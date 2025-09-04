@@ -1,0 +1,67 @@
+import org.springframework.boot.gradle.plugin.SpringBootPlugin
+
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.5'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'openTelemetry'
+version = '0.0.1-SNAPSHOT'
+description = 'Demo project for Spring Boot'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// Spring Boot starters
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	
+	// Development tools
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	
+	// Database
+	runtimeOnly 'org.postgresql:postgresql'
+	
+	// Lombok
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	
+	// Testing
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// OpenTelemetry BOM and dependencies
+	implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+	implementation(platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.19.0"))
+	
+	// OpenTelemetry core
+	implementation("io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter")
+	
+	// OpenTelemetry exporter for local testing
+	implementation("io.opentelemetry:opentelemetry-exporter-otlp")
+
+	// Logging dependencies – updated to latest stable versions
+    implementation 'org.slf4j:jul-to-slf4j:2.0.17'
+    implementation 'ch.qos.logback:logback-classic:1.5.18'
+    implementation 'io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0:2.19.0-alpha'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

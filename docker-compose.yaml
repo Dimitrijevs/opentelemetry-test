@@ -1,0 +1,99 @@
+services:
+  postgres_db_products:
+    image: postgres:17-alpine
+    container_name: postgres-products
+    networks:
+      - ht_network
+    environment:
+      POSTGRES_DB: products
+      POSTGRES_USER: products_username
+      POSTGRES_PASSWORD: products_password
+    ports:
+      - "5444:5432"
+    volumes:
+      - postgres_products_db_volume:/var/lib/postgresql/data
+
+  products-application:
+    container_name: products-application
+    build:
+      context: .              # 👈 project root
+      dockerfile: tomcat/Dockerfile
+    ports:
+      - "8085:8080"
+      - "9010:9010"
+      - "1099:1099"
+      - "8100:8100"
+    environment:
+      - JAVA_OPTS=-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.rmi.port=1099 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=localhost
+      - OTEL_SERVICE_NAME
+    depends_on:
+      - postgres_db_products
+    networks:
+      - ht_network
+
+  ht-otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: ht-otel-collector
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
+    ports:
+      - "1888:1888"
+      - "8888:8888"
+      - "8889:8889"
+      - "13133:13133"
+      - "4317:4317"
+      - "4318:4318"
+      - "55679:55679"
+      - "9464:9464"
+    networks:
+      - ht_network
+
+  ht-jaeger:
+    container_name: ht-jaeger
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"  # web ui
+      - "14250:14250"
+      - "14268:14268"
+      - "14269:14269"
+      - "9411:9411"
+    networks:
+      - ht_network
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    volumes:
+      - "./monitoring/prometheus.yaml:/etc/prometheus/prometheus.yml"
+      - "./monitoring/rules:/etc/prometheus/rules"
+      - "prometheus-data:/prometheus"
+    networks:
+      - ht_network
+    ports:
+      - 9090:9090
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    networks:
+      - ht_network
+    ports:
+      - "3005:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  postgres_products_db_volume:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  ht_network:
+    driver: bridge
