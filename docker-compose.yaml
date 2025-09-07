@@ -13,23 +13,23 @@ services:
     volumes:
       - postgres_products_db_volume:/var/lib/postgresql/data
 
-  products-application:
-    container_name: products-application
-    build:
-      context: .              # 👈 project root
-      dockerfile: tomcat/Dockerfile
-    ports:
-      - "8085:8080"
-      - "9010:9010"
-      - "1099:1099"
-      - "8100:8100"
-    environment:
-      - JAVA_OPTS=-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.rmi.port=1099 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=localhost
-      - OTEL_SERVICE_NAME
-    depends_on:
-      - postgres_db_products
-    networks:
-      - ht_network
+  # products-application:
+  #   container_name: products-application
+  #   build:
+  #     context: .              # 👈 project root
+  #     dockerfile: tomcat/Dockerfile
+  #   ports:
+  #     - "8085:8080"
+  #     - "9010:9010"
+  #     - "1099:1099"
+  #     - "8100:8100"
+  #   environment:
+  #     - JAVA_OPTS=-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.rmi.port=1099 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=localhost
+  #     - OTEL_SERVICE_NAME
+  #   depends_on:
+  #     - postgres_db_products
+  #   networks:
+  #     - ht_network
 
   ht-otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
