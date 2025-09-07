@@ -51,6 +51,12 @@ dependencies {
     implementation("io.opentelemetry:opentelemetry-exporter-otlp")
 
 	implementation("io.opentelemetry.semconv:opentelemetry-semconv:1.26.0-alpha")
+
+	// logs
+	implementation 'org.slf4j:jul-to-slf4j:2.0.16'
+    implementation 'ch.qos.logback:logback-classic:1.5.15'
+    implementation 'ch.qos.logback:logback-core:1.5.15'
+    implementation 'io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0:2.11.0-alpha'
 }
 
 tasks.named('test') {
