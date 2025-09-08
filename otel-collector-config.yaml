@@ -1,4 +1,27 @@
 receivers:
+  postgresql:
+    endpoint: postgres-products:5432
+    transport: tcp
+    username: products_username
+    password: products_password
+    databases:
+      - products
+    collection_interval: 15s
+    tls:
+      insecure: true
+      insecure_skip_verify: true
+      # ca_file: /home/otel/authorities.crt
+      # cert_file: /home/otel/mypostgrescert.crt
+      # key_file: /home/otel/mypostgreskey.key
+    # events:
+    #   db.server.query_sample:
+    #     enabled: true
+    #   db.server.top_query:
+    #     enabled: true
+    #   max_rows_per_query: 100
+    # top_query_collection:
+    #   top_n_query: 100
+
   otlp:
     protocols:
       grpc:
@@ -7,7 +30,26 @@ receivers:
         endpoint: 0.0.0.0:4318
 
 processors:
+  transform/pgmetrics:
+    metric_statements:
+      - context: datapoint
+        statements:
+          - set(attributes["custom_ts"], String(Now())) where metric.name == "postgresql.index.size"
+          - set(attributes["database"], resource.attributes["postgresql.database.name"]) where metric.name == "postgresql.index.scans"
+      - context: metric
+        statements:
+          - set(name, "db_index_size_bytes") where name == "postgresql.index.size"
+          - set(name, "db_index_scan_count") where name == "postgresql.index.scans"
+
   batch:
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+  # gui to see pipelines
+  zpages:
+    endpoint: 0.0.0.0:55679
 
 exporters:
   debug:
@@ -20,6 +62,8 @@ exporters:
     endpoint: "0.0.0.0:9464"
 
 service:
+  extensions: [health_check, zpages]
+
   pipelines:
     traces:
       receivers: [otlp]
@@ -27,8 +71,8 @@ service:
       exporters: [debug, otlp]
 
     metrics:
-      receivers: [otlp]
-      processors: [batch]
+      receivers: [otlp, postgresql]
+      processors: [transform/pgmetrics, batch]
       exporters: [debug, prometheus]
 
     logs:

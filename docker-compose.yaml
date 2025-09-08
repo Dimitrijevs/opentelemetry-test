@@ -35,7 +35,7 @@ services:
     image: otel/opentelemetry-collector-contrib:latest
     container_name: ht-otel-collector
     volumes:
-      - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
+      - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
     ports:
       - "1888:1888"
       - "8888:8888"
@@ -45,12 +45,16 @@ services:
       - "4318:4318"
       - "55679:55679"
       - "9464:9464"
+    depends_on:
+      - ht-jaeger
     networks:
       - ht_network
 
   ht-jaeger:
     container_name: ht-jaeger
     image: jaegertracing/all-in-one:latest
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
     ports:
       - "6831:6831/udp"
       - "6832:6832/udp"
@@ -71,13 +75,13 @@ services:
       - "--storage.tsdb.path=/prometheus"
       - "--web.enable-lifecycle"
     volumes:
-      - "./monitoring/prometheus.yaml:/etc/prometheus/prometheus.yml"
-      - "./monitoring/rules:/etc/prometheus/rules"
+      - "./monitoring/prometheus.yaml:/etc/prometheus/prometheus.yml:ro"
+      - "./monitoring/rules:/etc/prometheus/rules:ro"
       - "prometheus-data:/prometheus"
     networks:
       - ht_network
     ports:
-      - 9090:9090
+      - "9090:9090"
 
   grafana:
     image: grafana/grafana:latest
