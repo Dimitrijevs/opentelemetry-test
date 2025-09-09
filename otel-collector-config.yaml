@@ -61,6 +61,11 @@ exporters:
   prometheus:
     endpoint: "0.0.0.0:9464"
 
+  otlphttp:
+    endpoint: "http://ht-jaeger:4318"
+    tls:
+      insecure: true
+
 service:
   extensions: [health_check, zpages]
 

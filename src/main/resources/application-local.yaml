@@ -21,6 +21,8 @@ otel:
     name: products-service
   traces:
     exporter: otlp
+  metrics: 
+    exporter: otlp
   exporter:
     otlp:
       endpoint: "http://localhost:4317"
@@ -28,3 +30,12 @@ otel:
   metric:
     export:
       interval: 15s
+
+management:
+  metrics:
+    tags:
+      application: products
+  endpoints:
+    web:
+      exposure:
+        include: "*"
