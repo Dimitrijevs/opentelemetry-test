@@ -25,6 +25,13 @@ public class ProductController {
 
     private final ProductService productService;
 
+    @GetMapping("/welcome-page")
+    @ResponseStatus(HttpStatus.OK)
+    public String welcome() {
+
+        return "Welcome page!";
+    }
+
     @GetMapping("/all")
     @ResponseStatus(HttpStatus.OK)
     public List<ProductResponse> AllProducts() {

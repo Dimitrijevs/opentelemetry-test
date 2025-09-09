@@ -36,6 +36,8 @@ public class ProductService {
     // metric
     private final LongCounter requestCounter;
 
+    private final LongCounter createdProducts;
+
     // tracer
     private final Tracer tracer;
 
@@ -50,6 +52,10 @@ public class ProductService {
 
         this.requestCounter = meter.counterBuilder("app.db.requests")
                 .setDescription("Counter_db_requests")
+                .build();
+
+        this.createdProducts = meter.counterBuilder("app.db.created.products")
+                .setDescription("Counter_created_products")
                 .build();
 
         this.tracer = openTelemetry.getTracer(INSTRUMENTATION_NAME);
@@ -194,6 +200,8 @@ public class ProductService {
         Product product = productMapper.product(request);
 
         productRepository.save(product);
+
+        createdProducts.add(1);
 
         return productMapper.productResponse(product);
     }

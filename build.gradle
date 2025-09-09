@@ -65,6 +65,11 @@ dependencies {
     implementation 'ch.qos.logback:logback-classic:1.5.15'
     implementation 'ch.qos.logback:logback-core:1.5.15'
     implementation 'io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0:2.11.0-alpha'
+
+    // jmeter dsl
+    testImplementation("us.abstracta.jmeter:jmeter-java-dsl:1.30") {
+        exclude group: "org.apache.jmeter", module: "bom"
+    }
 }
 
 tasks.named('test') {
