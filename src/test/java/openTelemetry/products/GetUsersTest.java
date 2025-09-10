@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static us.abstracta.jmeter.javadsl.JmeterDsl.httpDefaults;
 import static us.abstracta.jmeter.javadsl.JmeterDsl.httpSampler;
-import static us.abstracta.jmeter.javadsl.JmeterDsl.jsr223PostProcessor;
+import static us.abstracta.jmeter.javadsl.JmeterDsl.synchronizingTimer;
 import static us.abstracta.jmeter.javadsl.JmeterDsl.jtlWriter;
 import static us.abstracta.jmeter.javadsl.JmeterDsl.testPlan;
 import static us.abstracta.jmeter.javadsl.JmeterDsl.threadGroup;
@@ -35,7 +35,6 @@ public class GetUsersTest {
 
         // test initialization
         TestPlanStats stats = testPlan(
-
                 httpDefaults().url("http://localhost:8100/api/v1/products"),
                 // instead of iterations I can allso write Duration.ofMinutes(1)
 
@@ -69,15 +68,16 @@ public class GetUsersTest {
                 // );
 
                 threadGroup(2, 20,
-                        httpSampler("get_users", allProductsPath)
-                                // .children(jsr223PostProcessor(s -> {
-                                //     if ("429".equals(s.prev.getResponseCode())) {
-                                //         s.prev.setSuccessful(true);
-                                //     }
-                                // })
-                                // )
-                ),
+                        httpSampler("get_users", allProductsPath),
+                        // .children(jsr223PostProcessor(s -> {
+                        //     if ("429".equals(s.prev.getResponseCode())) {
+                        //         s.prev.setSuccessful(true);
+                        //     }
+                        // })
+                        // )
 
+                        synchronizingTimer()
+                ),
                 // saves request stats
                 jtlWriter("target/getUsersTest"),
                 // htmlReporter("target_reports/getUsersTest"),
