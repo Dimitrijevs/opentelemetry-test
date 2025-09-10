@@ -34,6 +34,7 @@ out/
 /.nb-gradle/
 
 /target/*
+/target_reports/*
 
 ### VS Code ###
 .vscode/

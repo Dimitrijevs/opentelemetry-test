@@ -16,3 +16,10 @@ scrape_configs:
     metrics_path: "/actuator/prometheus"
     static_configs:
       - targets: ["host.docker.internal:8100"]
+
+  - job_name: "jmeter"
+    static_configs:
+      - targets: ["host.docker.internal:9270"] # Default port for JMeter Prometheus listener
+    scrape_interval: 5s
+    scrape_timeout: 4s
+    metrics_path: "/metrics"

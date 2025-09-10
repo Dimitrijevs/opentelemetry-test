@@ -7,7 +7,7 @@ plugins {
 // build.gradle
 bootRun {
     jvmArgs = [
-        "-javaagent:${projectDir}/opentelemetry-javaagent.jar"
+        "-javaagent:./opentelemetry-javaagent.jar"
     ]
 }
 
@@ -55,8 +55,6 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     
     // Explicitly add JUnit Jupiter API to ensure it's available
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.1'
-    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.10.1'
     testImplementation 'org.assertj:assertj-core:3.24.2'
 
     // OpenTelemetry core
@@ -95,6 +93,8 @@ dependencies {
 
     implementation 'io.micrometer:micrometer-registry-prometheus'
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+
+    testImplementation 'us.abstracta.jmeter:jmeter-java-dsl-prometheus:1.30'
 }
 
 tasks.named('test') {

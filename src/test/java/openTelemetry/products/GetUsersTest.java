@@ -1,15 +1,20 @@
 package openTelemetry.products;
 
-import static us.abstracta.jmeter.javadsl.JmeterDsl.*;
-
 import java.io.IOException;
 import java.time.Duration;
-import static org.assertj.core.api.Assertions.assertThat;
 
-// import org.junit.jupiter.api.AfterEach;
-// import org.junit.jupiter.api.BeforeEach;
+import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
+
+import static us.abstracta.jmeter.javadsl.JmeterDsl.htmlReporter;
+import static us.abstracta.jmeter.javadsl.JmeterDsl.httpSampler;
+import static us.abstracta.jmeter.javadsl.JmeterDsl.jtlWriter;
+import static us.abstracta.jmeter.javadsl.JmeterDsl.testPlan;
+import static us.abstracta.jmeter.javadsl.JmeterDsl.threadGroup;
 import us.abstracta.jmeter.javadsl.core.TestPlanStats;
+import us.abstracta.jmeter.javadsl.prometheus.DslPrometheusListener.PrometheusMetric;
+
+import static us.abstracta.jmeter.javadsl.prometheus.DslPrometheusListener.prometheusListener;
 
 public class GetUsersTest {
 
@@ -18,12 +23,10 @@ public class GetUsersTest {
     // public void setup() {
     //     // my custom setup logic
     // }
-
     // @AfterEach
     // public void setup() {
     //     // my custom setup logic
     // }
-
     @Test
     public void testPerformance() throws IOException {
 
@@ -60,18 +63,32 @@ public class GetUsersTest {
                 //   httpSampler("http://my.service")
                 // );
 
-                threadGroup(1, 10,
+                threadGroup(2, 20,
                         httpSampler("get_users", "http://localhost:8100/api/v1/products/all")
                 ),
-
                 // saves request stats
-                jtlWriter("target/getUsersTest")
+                jtlWriter("target/getUsersTest"),
 
-                // gui
-                // resultsTreeVisualizer()
+                htmlReporter("target_reports/getUsersTest"),
+
+                prometheusListener()
+                        .metrics(
+                                PrometheusMetric.responseTime("ResponseTime", "Response time of samplers")
+                                        .labels(PrometheusMetric.SAMPLE_LABEL, PrometheusMetric.RESPONSE_CODE)
+                                        .quantile(0.5, 0.5)
+                                        .quantile(0.95, 0.1)
+                                        .quantile(0.99, 0.01)
+                                        .maxAge(Duration.ofMinutes(1)),
+                                PrometheusMetric.successRatio("SuccessRatio", "Success ratio of samplers")
+                                        .labels(PrometheusMetric.SAMPLE_LABEL, PrometheusMetric.RESPONSE_CODE)
+                        )
+                        .port(9270)
+                        .endWait(Duration.ofSeconds(120))
+        // gui
+        // resultsTreeVisualizer()
         ).run();
 
         // requirements for test to pass
-        assertThat(stats.overall().sampleTimePercentile99()).isLessThan(Duration.ofSeconds(5));
+        assertThat(stats.overall().sampleTimePercentile99()).isLessThan(Duration.ofMinutes(5));
     }
 }

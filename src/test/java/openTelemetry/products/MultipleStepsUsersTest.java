@@ -10,8 +10,10 @@ import org.apache.http.entity.ContentType;
 import org.apache.jmeter.protocol.http.util.HTTPConstants;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
+import static us.abstracta.jmeter.javadsl.prometheus.DslPrometheusListener.prometheusListener;
 
 import us.abstracta.jmeter.javadsl.core.TestPlanStats;
+import us.abstracta.jmeter.javadsl.prometheus.DslPrometheusListener.PrometheusMetric;
 
 public class MultipleStepsUsersTest {
 
@@ -51,19 +53,30 @@ public class MultipleStepsUsersTest {
                         // Fourth HTTP request - GET to /cart (to view cart)
                         httpSampler("get-products-all-2", "http://localhost:8100/api/v1/products/all")
                 ),
-
                 // jtlWriter("target/multipleStepsUsersTest").withAllFields()
-                jtlWriter("target/multipleStepsUsersTest")
+                jtlWriter("target/multipleStepsUsersTest"),
+                prometheusListener()
+                        .metrics(
+                                PrometheusMetric.responseTime("ResponseTime", "Response time of samplers")
+                                        .labels(PrometheusMetric.SAMPLE_LABEL, PrometheusMetric.RESPONSE_CODE)
+                                        .quantile(0.75, 0.5)
+                                        .quantile(0.95, 0.1)
+                                        .quantile(0.99, 0.01)
+                                        .maxAge(Duration.ofMinutes(1)),
+                                PrometheusMetric.successRatio("SuccessRatio", "Success ratio of samplers")
+                                        .labels(PrometheusMetric.SAMPLE_LABEL, PrometheusMetric.RESPONSE_CODE)
+                        )
+                        .port(9270)
+                        .endWait(Duration.ofSeconds(120))
+        // jtlWriter("target/jtls/success")
+        //         .logOnly(SampleStatus.SUCCESS),
+        // jtlWriter("target/jtls/error")
+        //         .logOnly(SampleStatus.ERROR)
 
-                // jtlWriter("target/jtls/success")
-                //         .logOnly(SampleStatus.SUCCESS),
-                // jtlWriter("target/jtls/error")
-                //         .logOnly(SampleStatus.ERROR)
+        // responseFileSaver(Instant.now().toString().replace(":", "-") + "-response")
 
-                // responseFileSaver(Instant.now().toString().replace(":", "-") + "-response")
-
-                // to overwrite file name
-                // jtlWriter(directory, fileName)
+        // to overwrite file name
+        // jtlWriter(directory, fileName)
         // gui
         // can be added int variable to show amount of iterations ( by default is shown last 500 )
         // resultsTreeVisualizer()
