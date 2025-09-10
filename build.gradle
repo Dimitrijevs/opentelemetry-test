@@ -95,6 +95,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
     testImplementation 'us.abstracta.jmeter:jmeter-java-dsl-prometheus:1.30'
+
+    testImplementation 'us.abstracta.jmeter:jmeter-java-dsl-dashboard:1.30'
 }
 
 tasks.named('test') {

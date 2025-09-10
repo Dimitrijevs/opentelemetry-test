@@ -6,8 +6,9 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 
-import static us.abstracta.jmeter.javadsl.JmeterDsl.htmlReporter;
+import static us.abstracta.jmeter.javadsl.JmeterDsl.httpDefaults;
 import static us.abstracta.jmeter.javadsl.JmeterDsl.httpSampler;
+import static us.abstracta.jmeter.javadsl.JmeterDsl.jsr223PostProcessor;
 import static us.abstracta.jmeter.javadsl.JmeterDsl.jtlWriter;
 import static us.abstracta.jmeter.javadsl.JmeterDsl.testPlan;
 import static us.abstracta.jmeter.javadsl.JmeterDsl.threadGroup;
@@ -30,8 +31,12 @@ public class GetUsersTest {
     @Test
     public void testPerformance() throws IOException {
 
+        String allProductsPath = "/all";
+
         // test initialization
         TestPlanStats stats = testPlan(
+
+                httpDefaults().url("http://localhost:8100/api/v1/products"),
                 // instead of iterations I can allso write Duration.ofMinutes(1)
 
                 // threadGroup().rampTo(10, Duration.ofSeconds(5)).holdIterating(20)
@@ -64,12 +69,18 @@ public class GetUsersTest {
                 // );
 
                 threadGroup(2, 20,
-                        httpSampler("get_users", "http://localhost:8100/api/v1/products/all")
+                        httpSampler("get_users", allProductsPath)
+                                // .children(jsr223PostProcessor(s -> {
+                                //     if ("429".equals(s.prev.getResponseCode())) {
+                                //         s.prev.setSuccessful(true);
+                                //     }
+                                // })
+                                // )
                 ),
+
                 // saves request stats
                 jtlWriter("target/getUsersTest"),
-
-                htmlReporter("target_reports/getUsersTest"),
+                // htmlReporter("target_reports/getUsersTest"),
 
                 prometheusListener()
                         .metrics(
